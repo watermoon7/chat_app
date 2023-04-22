@@ -1,0 +1,35 @@
+Changes: 
+
+Server
+  - added server gui
+  - added a list of currently connected clients
+  - added kick function to kick selected client
+  - added a text display
+  - added functionality to send server messages
+  - added server commands
+  - added disconnect all players feature
+  - added feature to open the server
+  
+  - overhauled server gui 
+  - refactored client handeling
+  - attempted to make the code more stable by adding in exception catching
+  - added messagebox on closing of the window
+  
+Client
+  - overhauled client gui
+  - added a gui for entering your name on the client
+  - improved stability of code
+  - added message when you are disconnected
+  
+Commands
+  - added /cat command to return a random cat breed
+  - added /commands command to return the available commands
+  - added /dice command to return a random number from 1 to 6
+  - added /dog command to return a random dog breed
+  - added /fortune command to return a fortune
+  - added /height command to return your 'ACTUAL' height
+  - added /short command to return a random word describing your height
+  - renamed /short to /8ball as this suited it better
+  - added /math command to return the eval() of the math expression
+  - added /pp command to return your pp size
+  - added the ability to add parameters to commands
