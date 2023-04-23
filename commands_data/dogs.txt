@@ -1,0 +1,50 @@
+Airedale Terrier
+Akita
+Alaskan Malamute
+American Bulldog
+Australian Cattle Dog
+Australian Shepherd
+Basset Hound
+Beagle
+Bernese Mountain Dog
+Bichon Frise
+Bloodhound
+Border Collie
+Boston Terrier
+Boxer
+Bulldog
+Cane Corso
+Cavalier King Charles Spaniel
+Chihuahua
+Chow Chow
+Cocker Spaniel
+Dalmatian
+Doberman Pinscher
+English Springer Spaniel
+French Bulldog
+German Shepherd
+Golden Retriever
+Great Dane
+Greyhound
+Havanese
+Irish Setter
+Jack Russell Terrier
+Labrador Retriever
+Lhasa Apso
+Maltese
+Miniature Pinscher
+Newfoundland
+Old English Sheepdog
+Papillon
+Pekingese
+Pomeranian
+Poodle
+Pug
+Rottweiler
+Saint Bernard
+Schnauzer
+Shetland Sheepdog
+Shih Tzu
+Siberian Husky
+Vizsla
+Weimaraner
