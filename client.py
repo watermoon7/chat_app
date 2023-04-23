@@ -7,6 +7,7 @@ DC_MESSAGE = '/dc'
 SERVER = '127.0.0.1'
 ADDRESS = (SERVER, PORT)
 
+
 def update_chat():
     global textbox, msg_list
     textbox.config(state=NORMAL)
@@ -15,29 +16,29 @@ def update_chat():
     textbox.see(END)
     textbox.config(state=DISABLED)
 
-
+    
 def get_text(event=None):
     global entry, msg_list
 
     new = entry.get()
-    if new != '': utils.send(client, new)
+    if new != '': 
+        utils.send(client, new)
     entry.delete(0, END)
 
+    
 def recieving_feed(client):
     global msg_list
     time.sleep(0.4)
-    global msg_list
 
     while True:
         msg_list = utils.recieve(client)
-        print(msg_list)
-        print(msg_list==None)
         if msg_list == None:
             msg_list = "You have been disconnected. Restart the program to rejoin."
             update_chat()
             break
         update_chat()
 
+        
 name = ''
 def check_name():
     global name
@@ -45,6 +46,7 @@ def check_name():
         name = name_entry.get()
         initial.destroy()
 
+        
 def on_closing():
     if messagebox.askokcancel("Quit", "Do you want to quit?"):
         root.destroy()
@@ -52,6 +54,7 @@ def on_closing():
             utils.send(client, '/dc')
         except:
             ...
+            
 
 initial = Tk()
 initial.geometry("300x70")
