@@ -55,7 +55,6 @@ commands = {
     '/dog': dog,
     '/fortune': fortune,
     '/height': height,
-    '/math': math,
     '/pp': pp,
     '/8ball': ball_8
     }
@@ -69,7 +68,3 @@ def command(msg):
             return commands[msg[0]](msg[1])
         except:
             return 'Invalid command'
-
-""" while True:
-    inp = input('Command: ')
-    print(command(inp)) """
