@@ -55,7 +55,6 @@ commands = {
     '/dog': dog,
     '/fortune': fortune,
     '/height': height,
-    '/math': math,
     '/pp': pp,
     '/8ball': ball_8
     }
