@@ -68,7 +68,3 @@ def command(msg):
             return commands[msg[0]](msg[1])
         except:
             return 'Invalid command'
-
-""" while True:
-    inp = input('Command: ')
-    print(command(inp)) """
