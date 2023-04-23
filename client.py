@@ -32,11 +32,11 @@ def recieving_feed(client):
 
     while True:
         msg_list = utils.recieve(client)
+        update_chat()
+        
         if msg_list == None:
             msg_list = "You have been disconnected. Restart the program to rejoin."
-            update_chat()
             break
-        update_chat()
 
         
 name = ''
