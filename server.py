@@ -1,211 +1,183 @@
 import socket, threading, utils, commands, time, sys
+from tkinter import ttk, messagebox
 from tkinter import *
-from tkinter import ttk, messagebox 
 
-HEADER = 64
-PORT = 5054
+# SETTINGS -----
 SERVER = '127.0.0.1'
+PORT = 5055
 ADDR = (SERVER, PORT)
+STATE = 'CLOSED'
 DISCONNECT_MESSAGE = "/dc"
-
-
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+# -----
+
+clients = {}
 msg_list = []
-clients = []
+
+def update():
+    for client in clients:
+        utils.send(clients[client].connection, ''.join(msg_list))
+
+    chat_box.config(state=NORMAL)
+    chat_box.delete('1.0', END)
+    chat_box.insert('1.0', ''.join(msg_list))
+    chat_box.see(END)
+    chat_box.config(state=DISABLED)
+
+custom_messages = {
+    'connection': lambda *args: f'| @{args[0]} has connected |\n',
+    'kick':       lambda *args: f'| @{args[0]} has been kicked |\n',
+    'dc':         lambda *args: f'| @{args[0]} has left |\n',
+    'server':     lambda *args: f'[SERVER] {args[1]}\n' + (f'{commands.command(args[1])}\n' if args[1].split()[0] in commands.commands else ''),
+    'default':    lambda *args: f'{args[0]} > {args[1]}\n' + (f'{commands.command(args[1])}\n' if args[1].split()[0] in commands.commands else '')
+    }
+
+def message(type_, name=None, msg=None):
+    msg = custom_messages[type_](name, msg)
+    msg_list.append(msg)
+    update()
+
+def disconnect(client):
+    global clients
+    clients[client].connected = False
+    client_list.delete(list(clients.keys()).index(client))
+    del clients[client]
+    message('dc', client)
 
 class Client():
-
     def __init__(self, connection, addr, name):
+        self.connected = True
         self.connection = connection
         self.addr = addr
         self.name = name
-            
-        self.connected = True
-        self.client_id = (self.connection, self.name)
-        clients.append((connection, name))
-        lst.insert(len(clients), name)
-
-
-def update():
-    for c in clients:
-        utils.send(c[0], ''.join(msg_list))
-
-    textbox.config(state=NORMAL)
-    textbox.delete('1.0', END)
-    textbox.insert('1.0', ''.join(msg_list))
-    textbox.see(END)
-    textbox.config(state=DISABLED)
-
-
-custom_messages = {
-    'connection': lambda name: f'| @{name} has connected |',
-    'kick':       lambda name: f'| @{name} has been kicked |',
-    'dc':         lambda name: f'| @{name} has left |',
-    }
-
-def message(name, type_=None, msg=None):
-    if msg == "":
-        return 
-    if name == 'server':
-        msg_list.append(f'[SERVER] {msg}\n')
-        print(f'[SERVER] {msg}') 
-        if msg != "" and msg.split()[0] in commands.commands:
-            result = commands.command(msg)
-            msg_list.append(f'{result}\n')
-            print(f"{result}\n")
-    elif type_ == None:
-        msg_list.append(f" {name} > {msg}\n")
-        print(f" {name} > {msg}")
-    elif type_ == 'command':
-        result = commands.command(msg)
-        msg_list.append(f" {name} > {msg}\n")
-        msg_list.append(f"{result}\n")
-        print(f" {name} > {msg}")
-        print(f"{result}")
-    else:
-        msg = custom_messages[type_](name)
-        msg_list.append(f'{msg}\n')
-        print(msg)
-    update()
+    
+    def run(self):
+        while self.connected:
+            msg = utils.recieve(self.connection)
+            if msg == DISCONNECT_MESSAGE:
+                disconnect(self.name)
+            else:
+                message('default', self.name, msg)
+                    
+        self.connection.close()
         
-def get_text(*args):
-    text = entry.get()
-    entry.delete(0, END)
+def client_handler():
+    global clients
+    server.listen()
+    try:
+        while STATE == 'OPEN':
+            connection, addr = server.accept()
+            name = utils.recieve(connection).strip()
+            clients[name] = Client(connection, addr, name)
+            client_list.insert(len(clients), name)
+                
+            threading.Thread(target=clients[name].run, args=()).start()
+            message('connection', name)
+    except Exception as e:
+        print('Error has been detected at function "client_handler()"')
+        print(e)
+
+    
+def start():
+    global STATE
+    
+    def select_port():
+        global PORT
+        port_found = False
+        while not port_found:
+            try:
+                server.bind(ADDR)
+                port_found = True
+            except:
+                PORT += 1
+                ADDR = (SERVER, PORT)
+    
+    STATE = 'OPEN'
+    open_server["state"] = DISABLED
+    
+    select_port()
+    root.title(f'IP: {SERVER}     Port: {PORT}')
+    threading.Thread(target=client_handler, args=()).start()
+    message('server', msg='SERVER STARTED')
+
+def send_message(event=None):
+    text = input_box.get()
+    input_box.delete(0, END)
 
     message('server', msg=text)
 
-    textbox.config(state=NORMAL)
-    textbox.delete('1.0', END)
-    textbox.insert('1.0', ''.join(msg_list))
-    textbox.see(END)
-    textbox.config(state=DISABLED)
+def kick():
+    selected_client = client_list.curselection()
+    if selected_client != ():
+        disconnect(client_list.get(selected_client))    
 
-def handle_client(client):
-    print(f"[NEW CONNECTION] {client.name} at {client.addr} connected.")
-    try:
-        while True:
-            msg = utils.recieve(client.connection)
-            if msg == DISCONNECT_MESSAGE:
-                message(client.name, 'dc')
-                lst.delete(clients.index(client.client_id))
-                break
-            else:
-                if msg.split()[0] in commands.commands:
-                    message(client.name, 'command', msg)
-                else:    
-                    message(client.name, msg=msg)
-    except:
-        print("An Error occurd and {client.name} was disconnected")
-        if client.client_id in clients: message(client.name, 'kick')
-        try: lst.delete(clients.index(client.client_id))
-        except: ...
-        time.sleep(0.1)
-        
-    client.connection.close()
-    if client.client_id in clients:
-        clients.remove(client.client_id)
-    
-
-    print(f"[ACTIVE CONNECTIONS] {len(clients)}")
-
-
-def kick_client():
-    cli = lst.curselection()
-    if cli == ():
-        return
-    
-    connection = clients[[c[1] for c in clients].index(lst.get(cli))][0]
-    connection.close()
-    clients.remove((connection, lst.get(cli)))
-    
-    #message(lst.get(cli), 'kick')
-    
-    lst.delete(cli)
-
-def new_client_handler():
-    server.listen()
-    print("[STARTING] server is starting...")
-    print(f"[LISTENING] Server is listening on {SERVER}")
-    try:
-        while True:
-            connection, addr = server.accept()
-            name = utils.recieve(connection).strip()
-            client = Client(connection, addr, name)
-            
-            thread = threading.Thread(target=handle_client, args=(client,))
-            thread.start()
-            
-            message(name, 'connection')
-            print(f"[ACTIVE CONNECTIONS] {len(clients)}")
-    except:
-        print('Clients handeled')
-
-def start():
-    global server, PORT, SERVER
-    s["state"] = DISABLED
-    while True:
-        try:
-            server.bind(ADDR)
-            print(f"[PORT] The port it: {PORT}")
-            break
-        except: 
-            PORT += 1
-            ADDR = (SERVER, PORT)
-    print(PORT)
-    root.title(f'IP: {SERVER}     Port: {PORT}')
-    threading.Thread(target=new_client_handler, args=()).start()
-    message('server', msg='SERVER STARTED')
-
-
-def kill(): 
-    global clients
-    for o, i in enumerate(clients.copy()):
-        message(i[1], 'kick')
-        i[0].close()
-        clients.pop(0)
-    lst.delete(0, END)
-
+def disconnect_all():
+    for client in clients.copy():
+        disconnect(client)
+    message('server', msg='DISCONNECTED ALL CLIENTS')
 
 def on_closing():
     if messagebox.askokcancel("Quit", "Do you want to quit?"):
-        kill()
+        disconnect_all()
         server.close()
-        sys.exit()
-
-def size(*args):
-    print(root.winfo_height())
-    print(root.winfo_width())
+        root.destroy()
 
 root = Tk()
-root.geometry("705x475")
-root.configure(background='gray92')
+root.title('Display Demo')
+root.geometry('750x450')
 
-frame1=ttk.Frame(root,width=150,height=600)
-frame1.pack(side=LEFT, ipadx=10, ipady=10)
-frame2=ttk.Frame(root,width=400)
-frame2.pack(side=RIGHT, padx=10, pady=20)
+root.columnconfigure(1, weight=1)
+root.rowconfigure(0, weight=1)
 
-textbox = Text(frame2, bg='white')
-textbox.config(state=DISABLED)
-textbox.pack(side=TOP)
+client_controls = Frame(root, width=150, height=400, padx=10, pady=10)
+chat_controls = Frame(root, width=450, height=400, padx=10, pady=10)
 
-button = Button(frame2, text="Send", command=get_text)
-button.pack(ipadx=5, ipady=5, pady=5)
+client_controls.grid(row=0, column=0, sticky='ns')
+client_controls.rowconfigure(0, weight=1)
 
-entry = Entry(frame2)
-entry.pack(fill=X)
+chat_controls.grid(row=0, column=1, sticky='nsew')
+chat_controls.columnconfigure(0, weight=1)
+chat_controls.rowconfigure(0, weight=1)
 
-lst = Listbox(frame1, width=15, height=20)
-lst.pack(side=TOP, ipadx=10, ipady=10, padx=10, pady=5)
+# client widgets
+client_list = Listbox(client_controls)
+client_list.grid(row=0, sticky='ns')
 
-kick = Button(frame1, text='Kick', command=kick_client)
-kick.pack(side=TOP, ipadx=5, ipady=5, pady=10)
+kick_button = Button(client_controls, text='Kick', command=kick)
+kick_button.grid(ipadx=3, ipady=3)
 
-s = Button(frame2, text ='Open', command=start)
-s.pack(side=RIGHT, ipadx=5, ipady=5, padx=3)
-e = Button(frame2, text ='Disconnect All Clients', command=kill)
-e.pack(side=RIGHT, ipadx=5, ipady=5, padx=3)
+# chat widgets
+chat_window_frame = Frame(chat_controls, width=450, height=250, padx=5, pady=5)
+chat_window_frame.rowconfigure(0, weight=1)
+chat_window_frame.columnconfigure(0, weight=1)
+chat_input_frame = Frame(chat_controls, width=450, height=50, padx=5, pady=5)
+chat_options_frame = Frame(chat_controls, width=450, height=100, padx=5, pady=5)
+
+chat_window_frame.grid(row=0, column=0, sticky='nsew')
+chat_input_frame.grid(row=1, sticky='nsew')
+chat_options_frame.grid(row=2, sticky='nsew')
+
+# chat window widgets
+chat_box = Text(chat_window_frame, bg='gray93')
+chat_box.grid(row=0, sticky='nsew')
+
+# chat input widgets
+chat_input_frame.columnconfigure(0, weight=1)
+chat_input_frame.columnconfigure(1, weight=4)
+
+input_button = Button(chat_input_frame, text='Send', command=send_message)
+input_button.grid(row=0, column=0, sticky='ew', ipadx=3, ipady=3)
+
+input_box = Entry(chat_input_frame)
+input_box.grid(row=0, column=1, sticky='ew')
+
+# chat options widgets
+open_server = Button(chat_options_frame, text ='Open', command=start)
+open_server.pack(side=RIGHT, ipadx=5, ipady=5, padx=3)
+
+disconnect_all_button = Button(chat_options_frame, text ='Disconnect All Clients', command=disconnect_all)
+disconnect_all_button.pack(side=RIGHT, ipadx=5, ipady=5, padx=3)
 
 root.protocol("WM_DELETE_WINDOW", on_closing)
-root.bind("<Return>", get_text) 
+root.bind("<Return>", send_message) 
 root.mainloop()
