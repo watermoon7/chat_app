@@ -1,7 +1,9 @@
 - Create multiple chat 'rooms' and provide a gui to move between them
   - create a class for a chat room
-  - record messages
   - display them when the room is selected
-- Improve server code as it is extremely messy
-- Add tictactoe to commands
-- Improve client gui by moving the textbox to the top
+  
+- Image system
+  - sending raw image data
+  - decoding the data
+  - displaying this on screen
+  - choose a file to send
