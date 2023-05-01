@@ -4,7 +4,7 @@ from tkinter import *
 
 # SETTINGS -----
 SERVER = '127.0.0.1'
-PORT = 5055
+PORT = 5056
 ADDR = (SERVER, PORT)
 STATE = 'CLOSED'
 DISCONNECT_MESSAGE = "/dc"
@@ -26,10 +26,10 @@ def update():
 
 custom_messages = {
     'connection': lambda *args: f'| @{args[0]} has connected |\n',
-    'kick':       lambda *args: f'| @{args[0]} has been kicked |\n',
-    'dc':         lambda *args: f'| @{args[0]} has left |\n',
+    'default':    lambda *args: f'{args[0]} > {args[1]}\n' + (f'{commands.command(args[1])}\n' if args[1].split()[0] in commands.commands else ''),
     'server':     lambda *args: f'[SERVER] {args[1]}\n' + (f'{commands.command(args[1])}\n' if args[1].split()[0] in commands.commands else ''),
-    'default':    lambda *args: f'{args[0]} > {args[1]}\n' + (f'{commands.command(args[1])}\n' if args[1].split()[0] in commands.commands else '')
+    'kick':       lambda *args: f'| @{args[0]} has been kicked |\n',
+    'dc':         lambda *args: f'| @{args[0]} has left |\n'
     }
 
 def message(type_, name=None, msg=None):
@@ -40,6 +40,7 @@ def message(type_, name=None, msg=None):
 def disconnect(client):
     global clients
     clients[client].connected = False
+    utils.send(clients[client].connection, '/dc')
     client_list.delete(list(clients.keys()).index(client))
     del clients[client]
     message('dc', client)
@@ -56,9 +57,9 @@ class Client():
             msg = utils.recieve(self.connection)
             if msg == DISCONNECT_MESSAGE:
                 disconnect(self.name)
-            else:
+            elif msg not in [None, ""]:
                 message('default', self.name, msg)
-                    
+                
         self.connection.close()
         
 def client_handler():
@@ -103,8 +104,9 @@ def start():
 def send_message(event=None):
     text = input_box.get()
     input_box.delete(0, END)
-
-    message('server', msg=text)
+    
+    if text not in [None, ""]:
+        message('server', msg=text)
 
 def kick():
     selected_client = client_list.curselection()
@@ -121,6 +123,7 @@ def on_closing():
         disconnect_all()
         server.close()
         root.destroy()
+        
 
 root = Tk()
 root.title('Display Demo')
